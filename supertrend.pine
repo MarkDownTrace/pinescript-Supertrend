@@ -1,0 +1,25 @@
+//@version=5
+strategy("Supertrend Strategy", overlay=true, default_qty_type=strategy.percent_of_equity, default_qty_value=15)
+
+btcusdt = request.security(syminfo.tickerid, "3M", close)
+
+atrPeriod = input(10, "ATR Length")
+factor = input.float(3.0, "Factor", step = 0.01)
+
+[_, direction] = ta.supertrend(factor, atrPeriod)
+
+var strategy.entry("My Long Entry Id", strategy.long)
+var float bestProfit = na
+var int bestTradeIndex = na
+
+if ta.change(direction) < 0 and barstate.isrealtime
+    tradeIndex = strategy.order("My Long Entry Id", strategy.long)
+    if na(bestTradeIndex) or strategy.profit(bestTradeIndex) < 0
+        bestTradeIndex := tradeIndex
+
+// Keep the best-performing long trade open until the end of the 3-month period
+if barstate.islast and not na(bestTradeIndex)
+    strategy.close("My Long Entry Id", bestTradeIndex)
+    bestProfit := strategy.profit(bestTradeIndex)
+
+//plot(strategy.equity, title="equity", color=color.red, linewidth=2, style=plot.style_areabr)
